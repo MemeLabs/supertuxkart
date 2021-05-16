@@ -1,0 +1,23 @@
+name: Build latest image
+on:
+  push:
+    branches:
+      - 'master'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Podman login
+      env:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      run: podman login https://docker.pkg.github.com -u ${username} -p ${password}
+
+    - name: Build API image
+      run: podman build . -t docker.pkg.github.com/memelabs/supertuxkart/server:stable
+
+    - name: Podman push
+      run: podman push docker.pkg.github.com/memelabs/supertuxkart/server:stable
