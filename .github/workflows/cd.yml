@@ -2,7 +2,7 @@ name: Build latest image
 on:
   push:
     branches:
-      - 'master'
+      - 'main'
 
 jobs:
   build:
@@ -10,14 +10,14 @@ jobs:
     steps:
     - uses: actions/checkout@v1
 
-    - name: Podman login
+    - name: Log into registry
       env:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-      run: podman login https://docker.pkg.github.com -u ${username} -p ${password}
+      run: podman login ghcr.io -u ${username} -p ${password}
 
-    - name: Build API image
-      run: podman build . -t docker.pkg.github.com/memelabs/supertuxkart/server:stable
+    - name: Build image
+      run: podman build . -t ghcr.io/jbpratt/supertuxkart/server:latest
 
-    - name: Podman push
-      run: podman push docker.pkg.github.com/memelabs/supertuxkart/server:stable
+    - name: Push image to registry
+      run: podman push ghcr.io/jbpratt/supertuxkart/server:latest
