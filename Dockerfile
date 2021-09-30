@@ -1,6 +1,6 @@
 FROM docker.io/library/ubuntu:20.10
 
-ARG TAG=1.2
+ARG TAG=1.3
 
 RUN : \
   && apt-get update \
