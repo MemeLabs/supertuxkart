@@ -1,23 +1,72 @@
-name: Build latest image
+name: Build and publish latest image
 on:
+  pull_request:
   push:
     branches:
       - 'main'
 
+env:
+  IMAGE_NAME: ghcr.io/jbpratt/supertuxkart/server
+  IMAGE_TAG: latest
+
 jobs:
   build:
+    name: Build and push multi-arch images
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [ amd64, arm64 ]
     steps:
-    - uses: actions/checkout@v1
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
 
-    - name: Log into registry
-      env:
+    - uses: actions/checkout@v2
+
+    - name: Log in to ghcr.io
+      uses: redhat-actions/podman-login@v1
+      with:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-      run: podman login ghcr.io -u ${username} -p ${password}
+        registry: ghcr.io
 
-    - name: Build image
-      run: podman build . -t ghcr.io/jbpratt/supertuxkart/server:latest
+    - name: Buildah Action
+      id: build-image
+      uses: redhat-actions/buildah-build@v2
+      with:
+        image: ${{ env.IMAGE_NAME }}
+        tags: ${{ env.IMAGE_TAG }}-${{ matrix.arch }}
+        arch: ${{ matrix.arch }}
+        oci: true
+        build-args: |
+          ARCH=${{ matrix.arch }}
+        dockerfiles: |
+          ./Dockerfile
 
-    - name: Push image to registry
-      run: podman push ghcr.io/jbpratt/supertuxkart/server:latest
+    - name: Push to ghcr
+      uses: redhat-actions/push-to-registry@v2
+      with:
+        image: ${{ steps.build-image.outputs.image }}
+        tags: ${{ steps.build-image.outputs.tags }}
+        registry: ghcr.io
+
+  publish:
+    name: Publish manifest
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+    - name: Log in to ghcr.io
+      uses: redhat-actions/podman-login@v1
+      with:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        registry: ghcr.io
+
+    - name: Create and publish image manifest
+      run: |
+        set -x
+        podman manifest create ${IMAGE_NAME}:latest
+        podman manifest add ${IMAGE_NAME}:latest docker://${IMAGE_NAME}:${IMAGE_TAG}-amd64
+        podman manifest add ${IMAGE_NAME}:latest docker://${IMAGE_NAME}:${IMAGE_TAG}-arm64
+        podman manifest push ${IMAGE_NAME}:latest docker://${IMAGE_NAME}:${IMAGE_TAG}
