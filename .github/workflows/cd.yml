@@ -22,7 +22,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [ amd64, arm64 ]
+        arch:
+          - amd64
+          # TODO: Currently takes too long to build so the actions times out
+          # - arm64
     steps:
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1

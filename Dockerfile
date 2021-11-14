@@ -90,16 +90,21 @@ COPY --from=builder \
   /usr/local/share/supertuxkart/
 
 COPY entrypoint.sh /usr/bin/
-RUN chmod +x /usr/bin/entrypoint.sh
 
 RUN : \
   && set -x \
+  && chmod +x /usr/bin/entrypoint.sh \
   && microdnf update -y \
   && microdnf install -y \
     tini \
+    shadow-utils \
   && microdnf clean all -y \
   && update-ca-trust \
+  && groupadd --gid 10001 --system stk \
+  && useradd --uid 10000 --gid 10001 --system --create-home --home-dir /home/stk stk \
   && :
 
+USER stk
+WORKDIR /home/stk
 ENV PATH="/usr/local/bin:${PATH}"
 ENTRYPOINT ["tini", "--", "entrypoint.sh", "supertuxkart"]
