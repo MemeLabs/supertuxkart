@@ -1,0 +1,47 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server
+  labels:
+    app: supertuxkart
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: supertuxkart
+  template:
+    metadata:
+      labels:
+        app: supertuxkart
+    spec:
+      hostNetwork: true
+      volumes:
+        - name: config
+          configMap:
+            name: config
+      containers:
+      - name: server
+        args:
+        - --server-config=config/server_config.xml
+        env:
+        - name: PATH
+          value: /usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+        - name: STK_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: credentials
+              key: username
+        - name: STK_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: credentials
+              key: password
+        image: ghcr.io/jbpratt/supertuxkart/server:latest
+        workingDir: /home/stk
+        stdin: true
+        tty: true
+        volumeMounts:
+        - name: config
+          mountPath: "/home/stk/config"
+          readOnly: true
