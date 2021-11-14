@@ -12,8 +12,8 @@ podman run \
   --network=host \
   --env STK_USERNAME=${STK_USERNAME} \
   --env STK_PASSWORD=${STK_PASSWORD} \
-  --volume config/:/home/stk/config/ \
-  ghcr.io/jbpratt/supertuxkart/server:latest --server-config=config/server_config.xml
+  --volume config/:/tmp/config/ \
+  ghcr.io/jbpratt/supertuxkart/server:latest --server-config=/tmp/config/server_config.xml
 ```
 
 Run on Kubernetes
