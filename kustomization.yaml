@@ -6,6 +6,7 @@ configMapGenerator:
 - files:
   - server_config.xml
   name: config
+  namespace: supertuxkart
 resources:
 - namespace.yml
 - secret.yaml
